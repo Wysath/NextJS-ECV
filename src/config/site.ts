@@ -1,9 +1,13 @@
+// A hosting dashboard holds a blank value as "", which ?? lets through and new URL() then rejects, so the
+// fallback has to catch the empty string and not just an absent variable
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || "http://localhost:3000";
+
 export const siteConfig = {
   name: "The Met",
   fullName: "The Metropolitan Museum of Art",
   description:
     "Explorez une sélection de chefs-d’œuvre de la peinture mondiale et préparez votre visite du Metropolitan Museum of Art.",
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+  url: siteUrl,
   nav: [
     { label: "Accueil", href: "/" },
     { label: "Tableaux", href: "/tableaux" },
