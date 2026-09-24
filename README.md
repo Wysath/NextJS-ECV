@@ -95,22 +95,12 @@ Le schéma doit exister sur la branche Neon visée avant le premier déploiement
 
 ## Retour critique sur Next.js
 
-### Ce qui tient ses promesses
+Ce qui m'a le plus servi, c'est de pouvoir interroger la base directement depuis une page, sans écrire d'API entre les deux. Et le prérendu : deux lignes, `generateStaticParams` et `revalidate`, et les fiches d'œuvres sont générées à l'avance puis rafraîchies toutes les heures. Sur un site de musée, c'est exactement ce qu'il faut.
 
-Les Server Components suppriment une couche entière. Les pages de ce projet interrogent Neon directement, sans API REST intermédiaire : pas de route à écrire, pas de types à maintenir en double, pas de sérialisation à déboguer. C'est le gain le plus net du framework, et il est réel.
+Le problème, c'est que ce prérendu est fragile dès qu'un utilisateur se connecte. Le header affiche un lien « Mon compte » qui dépend de la session. Si je lis cette session côté serveur, Next considère que la page dépend de la requête, et tout le site bascule en rendu dynamique. J'ai donc dû faire l'inverse de ce que le framework recommande : passer `AccountLink` en composant client et lire la session dans le navigateur. Même chose pour les favoris, où j'ai créé une route d'API (`/api/favorites/[slug]`) uniquement pour que les pages d'œuvres restent statiques. Next pousse à tout faire côté serveur, puis rend cette approche coûteuse dès qu'une donnée dépend de l'utilisateur. Les contournements fonctionnent, mais ce sont des contournements.
 
-Le prérendu est presque gratuit. `generateStaticParams` et `export const revalidate = 3600` dans `src/app/tableaux/[slug]/page.tsx` suffisent à générer les fiches d'œuvres en statique et à les régénérer toutes les heures. Deux lignes pour un comportement qui demandait un pipeline entier il y a quelques années.
+La deuxième surprise est venue du déploiement. En local tout fonctionnait, sur Vercel le build échouait. Parce que `next build` exécute réellement le code des pages pour en extraire les métadonnées, une variable d'environnement mal renseignée ne provoque pas une erreur au premier chargement du site : elle empêche la compilation. Et le message ne mentionnait même pas la variable en cause, juste `ERR_INVALID_URL, input: ''`. Il m'a fallu remonter jusqu'au layout racine pour comprendre. Next rend la configuration indispensable au build sans fournir le moindre moyen de la vérifier.
 
-Le tableau affiché en fin de build annonce, route par route, ce qui est statique, prérendu ou rendu à la demande. Peu de frameworks rendent leur propre comportement aussi lisible.
+Dernier point, plus mineur : l'optimisation d'images, souvent présentée comme un argument majeur du framework, ne me sert pas ici. Les tableaux viennent de Wikimedia Commons, qui utilise son propre système de redimensionnement, donc `next.config.ts` les laisse volontairement hors de l'optimiseur. La fonctionnalité existe, mais pas pour la source d'images principale du projet.
 
-### Ce que ça coûte
-
-**Le build exécute le code de l'application.** Pour collecter les métadonnées, `next build` évalue les modules de toutes les routes. Conséquence : une variable d'environnement absente ne provoque pas une erreur au premier appel HTTP, elle fait échouer la compilation entière. Ce projet en a fait les frais au déploiement. Une valeur vide dans `NEXT_PUBLIC_SITE_URL` a atteint `new URL("")` dans le layout racine, et le build est mort sur `ERR_INVALID_URL, input: ''`, sans jamais nommer la variable responsable. Next fait de la configuration d'environnement une dépendance critique de sa phase de build, mais ne fournit aucun mécanisme pour la valider.
-
-**La frontière serveur/client repose sur la discipline du développeur.** `"use client"` est une directive textuelle, pas un type. Rien dans le compilateur n'empêche d'importer un module serveur depuis un composant client. La seule protection réelle est `server-only`, un paquet tiers qu'il faut penser à importer manuellement dans chaque module concerné, avec les exceptions à documenter à la main. Un framework qui a fait de cette séparation son argument principal devrait la faire respecter par son système de types, pas par des conventions.
-
-**Le rythme des ruptures est élevé.** Next génère lui-même un fichier `AGENTS.md` dont la première phrase est « This is NOT the Next.js you know ». Quand un framework livre un avertissement expliquant que sa propre documentation en ligne et les réponses trouvées ailleurs sont probablement périmées, le coût de maintenance n'est pas accidentel, il est structurel.
-
-### Bilan
-
-Pour ce projet, un site de musée à contenu majoritairement statique avec une couche d'authentification légère, Next.js est le bon outil : le prérendu sert directement le référencement et les Server Components évitent d'écrire une API. L'arbitrage serait nettement moins favorable pour une application très interactive derrière un login, où l'on paierait la complexité du rendu serveur sans bénéficier du statique.
+Au final, je referais le même choix pour ce type de site, majoritairement statique et où le référencement compte. Pour une application derrière un écran de connexion, où presque chaque page dépend de l'utilisateur, je crois que je paierais la complexité du rendu serveur sans en retirer grand-chose.
