@@ -44,9 +44,9 @@ Le site est servi sur [http://localhost:3000](http://localhost:3000).
 | `DATABASE_URL` | oui | Chaîne de connexion Neon **poolée** (l'hôte contient `-pooler`) |
 | `BETTER_AUTH_SECRET` | oui | Clé de signature des sessions, générée par `openssl rand -base64 32` |
 | `BETTER_AUTH_URL` | oui | URL de base du site, `http://localhost:3000` en local |
-| `NEXT_PUBLIC_SITE_URL` | en production | URL publique absolue, sans barre oblique finale. Alimente les métadonnées, le sitemap et `robots.txt` |
+| `NEXT_PUBLIC_SITE_URL` | non sur Vercel | URL publique absolue, sans barre oblique finale. Alimente les métadonnées, le sitemap et `robots.txt` |
 
-En production, `NEXT_PUBLIC_SITE_URL` n'est pas facultative au sens strict : sans elle le site retombe sur `http://localhost:3000` et publie cette adresse dans son sitemap et ses balises Open Graph.
+Sur Vercel, `NEXT_PUBLIC_SITE_URL` peut rester vide : le site lit alors `NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL`, que la plateforme renseigne sur chaque déploiement, prévisualisations comprises. Cela suppose que l'option « Enable access to System Environment Variables » soit active dans les réglages du projet. Renseigne `NEXT_PUBLIC_SITE_URL` pour un domaine personnalisé ou un autre hébergeur : elle a la priorité. Sans aucune des deux, le site retombe sur `http://localhost:3000` et publierait cette adresse dans son sitemap et ses balises Open Graph.
 
 Attention si tu copies ces valeurs dans un tableau de bord d'hébergeur : les guillemets présents dans `.env.local` ne doivent pas être repris. Un fichier `.env` les retire au chargement, une interface web les conserve tels quels.
 
@@ -89,7 +89,7 @@ La base Neon ne stocke que ce qui appartient aux utilisateurs : les tables Bette
 
 Hébergé sur Vercel, déclenché par chaque push sur `main`.
 
-Les quatre variables ci-dessus doivent être définies dans les réglages du projet, `NEXT_PUBLIC_SITE_URL` et `BETTER_AUTH_URL` portant l'URL de production. Ne propage pas `BETTER_AUTH_URL` aux déploiements de prévisualisation : leur URL diffère à chaque build et l'authentification rejetterait l'origine. Better Auth retombe alors seul sur `VERCEL_URL`.
+`DATABASE_URL` et `BETTER_AUTH_SECRET` doivent être définies dans les réglages du projet. `BETTER_AUTH_URL` porte l'URL de production, et `NEXT_PUBLIC_SITE_URL` reste facultative puisque Vercel fournit déjà le domaine. Ne propage pas `BETTER_AUTH_URL` aux déploiements de prévisualisation : leur URL diffère à chaque build et l'authentification rejetterait l'origine. Better Auth retombe alors seul sur `VERCEL_URL`.
 
 Le schéma doit exister sur la branche Neon visée avant le premier déploiement (`npm run db:push` en pointant `DATABASE_URL` sur cette branche).
 

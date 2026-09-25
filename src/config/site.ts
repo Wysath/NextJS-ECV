@@ -1,6 +1,13 @@
-// A hosting dashboard holds a blank value as "", which ?? lets through and new URL() then rejects, so the
-// fallback has to catch the empty string and not just an absent variable
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim() || "http://localhost:3000";
+// Vercel fills this on every deployment, previews included, and exposes it to the browser: the site knows its own
+// production domain without anyone filling a dashboard field. It carries no protocol
+const vercelProductionUrl = process.env.NEXT_PUBLIC_VERCEL_PROJECT_PRODUCTION_URL?.trim();
+
+// || and not ??, because a dashboard holds a blank field as "", which ?? lets through and new URL() then rejects.
+// An explicit URL still wins, so a custom domain can override what Vercel reports
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+  (vercelProductionUrl ? `https://${vercelProductionUrl}` : "") ||
+  "http://localhost:3000";
 
 export const siteConfig = {
   name: "The Met",
