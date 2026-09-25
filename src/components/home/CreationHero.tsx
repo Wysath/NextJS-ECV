@@ -15,9 +15,9 @@ import godCutout from "@/assets/creation/god.webp";
 // The cutouts are local files, so the hero never depends on the catalogue answering: the home page keeps its h1
 const FRESCO = { slug: "the-creation-of-adam", title: "La Création d’Adam" };
 
-// Spread of the two halves at the top of the page, closed as the visitor scrolls through the pin. Each value stays
-// inside the margin the frame leaves around the figures (10% of the stage on desktop, 5% of the frame on phones):
-// a larger one would crop the figures against the stage edge
+// The two halves meet at the top of the page, where the CSS already places them, and the pin pulls them apart as the
+// visitor scrolls. Each value stays inside the margin the frame leaves around the figures (10% of the stage on
+// desktop, 5% of the frame on phones): a larger one would crop the figures against the stage edge
 const SPREAD = {
   desktop: {
     god: { xPercent: 16, yPercent: -14, rotate: 3 },
@@ -29,7 +29,6 @@ const SPREAD = {
     adam: { xPercent: -6, scale: 0.92, transformOrigin: "0% 100%" },
   },
 };
-const REST = { xPercent: 0, yPercent: 0, rotate: 0, scale: 1 };
 
 export function CreationHero() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -75,8 +74,10 @@ export function CreationHero() {
               },
             })
             .fromTo("[data-creation='word']", { xPercent: 8 }, { xPercent: -28, duration: 1 }, 0)
-            .fromTo("[data-creation='god']", spread.god, { ...REST, duration: 0.8 }, 0)
-            .fromTo("[data-creation='adam']", spread.adam, { ...REST, duration: 0.8 }, 0)
+            // to(), not fromTo(): the start of the spread is the layout the CSS already renders, so nothing is
+            // written to the figures before the first scroll and the fresco cannot flash apart on load
+            .to("[data-creation='god']", { ...spread.god, duration: 0.8 }, 0)
+            .to("[data-creation='adam']", { ...spread.adam, duration: 0.8 }, 0)
             .to("[data-creation='cue']", { autoAlpha: 0, duration: 0.1 }, 0);
 
           ScrollTrigger.sort();
